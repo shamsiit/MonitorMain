@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <meta charset="utf-8">
+<style>
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #333300;
+  shape-rendering: crispEdges;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #333300;
+}
+
+.box {
+  font: 10px sans-serif;
+  color: #333300;
+}
+
+.box line,
+.box rect,
+.box circle {
+  fill: #CC6600;
+  stroke: #333300;
+  stroke-width: 1.5px;
+}
+
+.box .center {
+  stroke-dasharray: 3,3;
+}
+
+.box .outlier {
+  fill: none;
+  stroke: #330099;
+}
+
+.scatterPlot circle{
+  opacity: 0.7;
+}
+
+svg{
+  border: 5px solid #6699FF;
+    border-radius: 5px;
+    background-color: #CCCCFF;
+    align-self: center;
+}
+
+path {
+    stroke: #CC6600;
+    stroke-width: 2;
+    fill: none;
+}
+ 
+line {
+    stroke: black;
+}
+ 
+text {
+    font-family: Arial;
+    font-size: 7pt;
+}
+
+.bar rect {
+      fill: #CC6600;
+      shape-rendering: crispEdges;
+    }
+    
+    .bar text {
+      fill: black;
+    }
+    
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: cornsilk;
+      shape-rendering: crispEdges;
+    }
+
+</style>
+
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+</head>
+<body onload="draw_box_plot('usage_idle')">
+<input type="hidden" name="report_id" id="report_id" value="{{rep_id}}">
+
+<select id="dropdown" onchange="draw_box_plot(this.value)"></select><br/><br/>
+
+<script type="text/javascript">
+ 
+    function draw_box_plot(index){
+
+      var id = $("#report_id").val();
+      var uri = "http://127.0.0.1:5000/api/v1/report/"+id;
+
+      $.ajax({
+            url: uri,
+            async: true,
+            success: function (data) {
+                my_data = data;
+                var pre_json = data;
+                console.log(pre_json);
+
+                var arr = pre_json["results"];
+                var obj = arr[0];
+
+                var json = obj["report_json"];
+                console.log(json);
+
+                var cols_pr = Object.keys(json);
+
+                if(index == 'usage_idle'){
+                  $('#dropdown').find('option').remove();
+
+                var select = document.getElementById('dropdown');
+                for (var i = 0; i<cols_pr.length; i++){
+                  if(cols_pr[i]=='index') continue;
+                  var opt = document.createElement('option');
+                  opt.value = cols_pr[i];
+                  opt.innerHTML = cols_pr[i];
+                  select.appendChild(opt);
+                }
+                }
+
+                
+
+                d3.select("svg").remove();
+
+      d3.select("svg").remove();
+
+      d3.select("svg").remove();
+
+      var margin = {top: 10, right: 50, bottom: 20, left: 50},
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+
+      var r = 6;
+
+      var min = Infinity,
+      max = -Infinity;
+
+      var y = d3.scale.linear()
+      .range([height, 0]);
+      var yAxis = d3.svg.axis()
+      .scale(y)
+      .orient("left");
+
+      var color = d3.scale.category10();
+
+      var sums = [];
+
+      var data = [];
+      var rows = [];
+      var cols_pr = Object.keys(json);
+      var cols = []
+
+      cols[0] = index;
+      data[0] = json[index];
+
+      var s = 0;
+      var n = 0;
+
+      for(var j=0;j<data[0].length;j++){
+          rows.push({'set':0,'val':data[0][j]});
+          if (data[0][j]>max) {
+            max = data[0][j];
+          }
+          if(data[0][j]<min){
+            min = data[0][j];
+          }
+          s = s + data[0][j];
+          n++;
+        }
+
+        sums[0] = {'sum':s,'n':n};
+
+
+      console.log('data length : '+data.length+" data : "+data[0]);
+
+
+      console.log('min : '+min);
+      console.log('max : '+max);
+
+      var boxPlotWidth = (20 > (width / cols.length)) ? (width / cols.length) : 20;
+      var chart = d3.box()
+      .whiskers(iqr(1.5))
+      .width(boxPlotWidth)
+      .height(height);
+
+      y.domain([0,max]).nice();
+      chart.domain([min, max]);
+      chart.domain([min, max]);
+
+  // distance between graphs
+  var graphMargin = 100;
+
+  var svg = d3.select("body")
+  .append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  svg.append('g')
+  .selectAll('box')
+  .data(data)
+  .enter().append('g')
+  .attr("class", "box")
+  .attr("transform", function(d,i){return "translate(" + (margin.left+(boxPlotWidth*i)+graphMargin*i) + "," + 0 + ")"})
+  .call(chart);
+
+  svg.append("g")
+  .attr("class", "y axis")
+  .call(yAxis)
+  .append("text")
+  .attr("class", "label")
+  .attr("transform", "rotate(-90)")
+  .attr("y", 6)
+  .attr("dy", ".71em")
+  .style("text-anchor", "end")
+  .text("2^-dd_ct");    
+
+
+
+  /*
+  //For scatter plot
+  svg = d3.select("body")
+  .append("svg")
+  .attr("width", width + margin.left + margin.right)
+  .attr("height", height + margin.top + margin.bottom)
+  .attr('class', 'scatterPlot')
+  .append("g")
+  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+  // use these variables (x and xAxis) to place the tick lines
+  // inbetween the chart data
+  var x = d3.scale.linear()
+  .domain([0,cols.length])
+  .range([0,width]);
+  var xAxis = d3.svg.axis().scale(x).orient("bottom")
+  .ticks(cols.length)
+  .tickFormat(function (d, i) { return cols[i]; })
+  .tickPadding(graphMargin);
+  // add tick lines to graph
+  svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform","translate (0,"+height+")")
+  .call(xAxis);
+  // use these variables (x2 and xAxis2) to position the labels of he graph
+  var x2 = d3.scale.ordinal()
+  .domain(cols)
+  .rangeRoundBands([0, width], .1);
+
+  var xAxis2 = d3.svg.axis()
+  .scale(x2)
+  .tickSize(0)
+  .orient("bottom");
+
+  svg.append("g")
+  .attr("class", "x axis")
+  .attr("transform", "translate(0," + height + ")")
+  .call(xAxis2);
+
+  svg.append("g")
+  .attr("class", "y axis")
+  .call(yAxis)
+  .append("text")
+  .attr("class", "label")
+  .attr("transform", "rotate(-90)")
+  .attr("y", 6)
+  .attr("dy", ".71em")
+  .style("text-anchor", "end")
+  .text("2^-dd_ct");
+
+  (function(){
+    var xPositions = [];
+    var yPositions = [];
+    svg.append("g")
+    .selectAll("circle")
+    .data(rows)
+    .enter().append("circle")
+    .attr("r",r)
+    .attr("cx", function(d,i){  
+      var xPos = x(d.set)+(graphMargin+r);
+      for (var j = 0; j < xPositions.length; j++) {
+          // if this point overlaps any other, 'jitter' it's x position
+          if( (xPositions[j] < xPos+r && xPositions[j] > xPos-r) && (yPositions[j] < y(d.val)+r && yPositions[j] > y(d.val)-r)  ){
+            var plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+            xPos+= r*plusOrMinus;
+            // prevent point from leaving appropriate margins
+            if(xPos < x(d.set) || xPos > (x(d.set)+(graphMargin*2+r)) ){
+              xPos = x(d.set)+(graphMargin+r) + Math.random()*graphMargin*plusOrMinus;
+            }
+        } 
+    }
+    xPositions.push(xPos);
+    yPositions.push(y(d.val));
+    return xPos;
+})
+    .attr("cy", function(d,i){  return y(d.val);  })
+    .style("fill", function(d,i){ return color(d.set) })
+    .style("stroke", function(d,i){ return d3.rgb(color(d.set)).darker().toString(); })
+    .on('click', function(d,i){
+      toggleDatum(this, d, i);
+    });
+  })();
+
+  svg.append("g")
+  .selectAll("line")
+  .data(sums)
+  .enter()
+  .append("line")
+  .attr("x1", function(d,i) {
+    return x(i)+graphMargin-r*2;
+  }).attr("y1", function(d,i) {
+    return y(d.sum/d.n);
+  }).attr("x2", function(d,i) {
+    return x(i)+graphMargin+r*4;
+  }).attr("y2", function(d,i) {
+    return y(d.sum/d.n)
+  })
+  .attr('class', function(d,i){return "meanLine"+i;})
+  .style("stroke", function(d,i){ return d3.rgb(color(i)).darker().toString(); })
+  .style("stroke-width",2)
+  .style("stroke-dasharray",1);*/
+
+  //d3.select("svg").remove();
+
+  fullJsonObj = json;
+  //console.log("Data : "+fullJsonObj);
+    var keys = Object.keys(fullJsonObj);
+    //console.log("Keys"+keys);
+    var desiredKey = index;
+
+    console.log("desiredKey : "+desiredKey);
+
+  var indexes = fullJsonObj["index"]; 
+  var values = fullJsonObj[desiredKey];
+
+  times = []
+  for(var i = 0, size = indexes.length; i < size ; i++){
+  var item = indexes[i];
+    var date = new Date(Date.parse(item));
+    var time = parseFloat(date.getMinutes() + '.' + date.getSeconds());
+    console.log(time);
+    times.push(time);
+  }
+
+      w = 960,
+      h = 500,
+      margin = 30,
+      y = d3.scale.linear().domain([d3.min(values), d3.max(values)]).range([0 + margin, h - margin]),
+      x = d3.scale.linear().domain([times[0], times[times.length -1]]).range([0 + margin, w - margin])
+
+      var vis = d3.select("body")
+          .append("svg:svg")
+          .attr("width", w)
+          .attr("height", h)
+
+      var g = vis.append("svg:g")
+          .attr("transform", "translate(0, "+h+")");
+      
+      var line = d3.svg.line()
+          .x(function(d,i) { return x(i); })
+          .y(function(d) { return -1 * y(d); })
+      
+      g.append("svg:path").attr("d", line(values));
+      
+      
+      g.selectAll(".xLabel")
+          .data(x.ticks(10))
+          .enter().append("svg:text")
+          .attr("class", "xLabel")
+          .text(String)
+          .attr("x", function(d) { return x(d) })
+          .attr("y", 0)
+          .attr("text-anchor", "middle");
+
+      g.selectAll(".yLabel")
+          .data(y.ticks(5))
+          .enter().append("svg:text")
+          .attr("class", "yLabel")
+          .text(String)
+          .attr("x", 0)
+          .attr("y", function(d) { return -1 * y(d) })
+          .attr("text-anchor", "right")
+          .attr("dy", -2);
+
+      g.append("g")
+          .append("text")
+          .text("(minutes)")
+          .attr("x", w - margin - 10)
+          .attr("y", 0);
+
+      g.append("g")
+          .append("text")
+          .text("(values)")
+          .attr("x", 0)
+          .attr("y", -(h - margin));
+
+
+
+          ///////Histogram
+
+      var margin = {
+        top: 30,
+        right: 30,
+        bottom: 30,
+        left: 30
+      },
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+
+    values = fullJsonObj[index];
+
+    var bincount = 20;
+
+      // Formatters for counts and times (converting numbers to Dates).
+    var formatCount = d3.format(",.0f"),
+      formatTime = d3.time.format("%H:%M"),
+      formatMinutes = function(d) {
+        return formatTime(new Date(2012, 0, 1, 0, d));
+      };
+    //this is the positioning of the chart
+    
+
+    var x = d3.scale.linear()
+      .domain([d3.min(values), d3.max(values)])
+      .range([0, width]);
+
+    // These are the number of bins in the histogram.
+    /*var ticks = d3.range(0, x.domain()[1] + 1, 30);*/
+    
+    bin_deviation = (d3.max(values)-d3.min(values))/bincount;
+    bin_deviation = bin_deviation.toFixed(6);
+    console.log(bin_deviation);
+    //bin_deviation = 0.1;
+
+    var data = d3.layout.histogram()
+      .bins(d3.range(x.domain()[0],x.domain()[1], bin_deviation))
+      (values);
+
+    var y = d3.scale.linear()
+      .domain([0, d3.max(data, function(d) {
+        console.log(d.y);
+        return d.y;
+      })])
+      .range([height, 0]);
+
+/*    var xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom")
+      .tickValues(ticks)
+      .tickFormat(formatMinutes);*/
+
+    
+
+    var xUpper = d3.svg.axis()
+                .tickValues(d3.range(x.domain()[0],x.domain()[1], bin_deviation))
+                .tickFormat(d3.format(",.2f"))
+                .orient("bottom")
+                .scale(d3.scale.linear().domain([x.domain()[0],d3.max(values)]).range([0,width]));
+
+
+
+    svg = d3.select("body").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    
+
+    var bar = svg.selectAll(".bar")
+      .data(data)
+      .enter().append("g")
+      .attr("class", "bar")
+      .attr("transform", function(d) {
+        return "translate(" + x(d.x) + "," + y(d.y) + ")";
+      });
+
+    bar.append("rect")
+      .attr("x", 1)
+      .attr("width", (x.range()[1] - x.range()[0]) / data.length - 2)
+      .attr("height", function(d) {
+        return height - y(d.y);
+      });
+    //this block of code makes the tick values showing how many fall into the bin
+
+    
+    bar.append("text")
+      .attr("dy", ".75em")
+      .attr("y", -12)
+      .attr("x", ((x.range()[1] - x.range()[0]) / data.length)/2)
+      .attr("text-anchor", "middle")
+      .text(function(d) {
+        return formatCount(d.y);
+      });
+
+    svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xUpper);
+
+
+
+
+
+          /////////////////
+
+
+  
+
+
+            },
+            error: function (xhr, textStatus, errorMessage) {
+                alert(errorMessage);
+            }                
+        });
+
+      console.log(index);
+
+      
+}
+
+    // Returns a function to compute the interquartile range.
+function iqr(k) {
+  return function(d, i) {
+    var q1 = d.quartiles[0],
+        q3 = d.quartiles[2],
+        iqr = (q3 - q1) * k,
+        i = -1,
+        j = d.length;
+    while (d[++i] < q1 - iqr);
+    while (d[--j] > q3 + iqr);
+    return [i, j];
+  };
+}
+
+function toggleDatum(elem,d,i){
+  if(elem.hasOwnProperty('excluded')){
+    // reintroduce
+    delete(elem.excluded);
+    d3.select(elem)
+      .style('fill', color(d.set))
+      .style('stroke','none');
+    sums[d.set].sum +=d.val;
+    sums[d.set].n++;
+  }
+  else{
+    d3.select(elem)
+      .style('fill', 'white')
+      .style('stroke','#ccc')
+      .style('stroke-width','1.5px');
+    elem.excluded=true;
+    sums[d.set].sum -=d.val;
+    sums[d.set].n--;
+  }
+  adjustMean(d);
+  return true;
+}
+
+function adjustMean(dataAltered){
+  if(sums[dataAltered.set].n < 1){
+    d3.selectAll(".meanLine"+dataAltered.set)
+    .transition()
+    .duration(1000)
+    .style('opacity', 0.0);
+  }
+  else{
+    d3.selectAll(".meanLine"+dataAltered.set)
+      .transition()
+      .duration(1000)
+      .attr("y1", function(d,i) {
+        return y(d.sum/d.n);
+      })
+      .attr("y2", function(d,i) {
+        return y(d.sum/d.n)
+      })
+      .style('opacity', 1.0);
+  }
+}
+
+(function() {
+// from http://bl.ocks.org/mbostock/4061502
+// Inspired by http://informationandvisualization.de/blog/box-plot
+d3.box = function() {
+  var width = 1,
+      height = 1,
+      duration = 0,
+      domain = null,
+      value = Number,
+      whiskers = boxWhiskers,
+      quartiles = boxQuartiles,
+      tickFormat = null;
+
+  // For each small multiple…
+  function box(g) {
+    g.each(function(d, i) {
+      d = d.map(value).sort(d3.ascending);
+      var g = d3.select(this),
+          n = d.length,
+          min = d[0],
+          max = d[n - 1];
+
+      // Compute quartiles. Must return exactly 3 elements.
+      var quartileData = d.quartiles = quartiles(d);
+
+      // Compute whiskers. Must return exactly 2 elements, or null.
+      var whiskerIndices = whiskers && whiskers.call(this, d, i),
+          whiskerData = whiskerIndices && whiskerIndices.map(function(i) { return d[i]; });
+
+      // Compute outliers. If no whiskers are specified, all data are "outliers".
+      // We compute the outliers as indices, so that we can join across transitions!
+      var outlierIndices = whiskerIndices
+          ? d3.range(0, whiskerIndices[0]).concat(d3.range(whiskerIndices[1] + 1, n))
+          : d3.range(n);
+
+      // Compute the new x-scale.
+      var x1 = d3.scale.linear()
+          .domain(domain && domain.call(this, d, i) || [min, max])
+          .range([height, 0]);
+
+      // Retrieve the old x-scale, if this is an update.
+      var x0 = this.__chart__ || d3.scale.linear()
+          .domain([0, Infinity])
+          .range(x1.range());
+
+      // Stash the new scale.
+      this.__chart__ = x1;
+
+      // Note: the box, median, and box tick elements are fixed in number,
+      // so we only have to handle enter and update. In contrast, the outliers
+      // and other elements are variable, so we need to exit them! Variable
+      // elements also fade in and out.
+
+      // Update center line: the vertical line spanning the whiskers.
+      var center = g.selectAll("line.center")
+          .data(whiskerData ? [whiskerData] : []);
+
+      center.enter().insert("line", "rect")
+          .attr("class", "center")
+          .attr("x1", width / 2)
+          .attr("y1", function(d) { return x0(d[0]); })
+          .attr("x2", width / 2)
+          .attr("y2", function(d) { return x0(d[1]); })
+          .style("opacity", 1e-6)
+        .transition()
+          .duration(duration)
+          .style("opacity", 1)
+          .attr("y1", function(d) { return x1(d[0]); })
+          .attr("y2", function(d) { return x1(d[1]); });
+
+      center.transition()
+          .duration(duration)
+          .style("opacity", 1)
+          .attr("y1", function(d) { return x1(d[0]); })
+          .attr("y2", function(d) { return x1(d[1]); });
+
+      center.exit().transition()
+          .duration(duration)
+          .style("opacity", 1e-6)
+          .attr("y1", function(d) { return x1(d[0]); })
+          .attr("y2", function(d) { return x1(d[1]); })
+          .remove();
+
+      // Update innerquartile box.
+      var box = g.selectAll("rect.box")
+          .data([quartileData]);
+
+      box.enter().append("rect")
+          .attr("class", "box")
+          .attr("x", 0)
+          .attr("y", function(d) { return x0(d[2]); })
+          .attr("width", width)
+          .attr("height", function(d) { return x0(d[0]) - x0(d[2]); })
+        .transition()
+          .duration(duration)
+          .attr("y", function(d) { return x1(d[2]); })
+          .attr("height", function(d) { return x1(d[0]) - x1(d[2]); });
+
+      box.transition()
+          .duration(duration)
+          .attr("y", function(d) { return x1(d[2]); })
+          .attr("height", function(d) { return x1(d[0]) - x1(d[2]); });
+
+      // Update median line.
+      var medianLine = g.selectAll("line.median")
+          .data([quartileData[1]]);
+
+      medianLine.enter().append("line")
+          .attr("class", "median")
+          .attr("x1", 0)
+          .attr("y1", x0)
+          .attr("x2", width)
+          .attr("y2", x0)
+        .transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1);
+
+      medianLine.transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1);
+
+      // Update whiskers.
+      var whisker = g.selectAll("line.whisker")
+          .data(whiskerData || []);
+
+      whisker.enter().insert("line", "circle, text")
+          .attr("class", "whisker")
+          .attr("x1", 0)
+          .attr("y1", x0)
+          .attr("x2", width)
+          .attr("y2", x0)
+          .style("opacity", 1e-6)
+        .transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1)
+          .style("opacity", 1);
+
+      whisker.transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1)
+          .style("opacity", 1);
+
+      whisker.exit().transition()
+          .duration(duration)
+          .attr("y1", x1)
+          .attr("y2", x1)
+          .style("opacity", 1e-6)
+          .remove();
+
+      // Update outliers.
+      var outlier = g.selectAll("circle.outlier")
+          .data(outlierIndices, Number);
+
+      outlier.enter().insert("circle", "text")
+          .attr("class", "outlier")
+          .attr("r", 5)
+          .attr("cx", width / 2)
+          .attr("cy", function(i) { return x0(d[i]); })
+          .style("opacity", 1e-6)
+        .transition()
+          .duration(duration)
+          .attr("cy", function(i) { return x1(d[i]); })
+          .style("opacity", 1);
+
+      outlier.transition()
+          .duration(duration)
+          .attr("cy", function(i) { return x1(d[i]); })
+          .style("opacity", 1);
+
+      outlier.exit().transition()
+          .duration(duration)
+          .attr("cy", function(i) { return x1(d[i]); })
+          .style("opacity", 1e-6)
+          .remove();
+
+      // Compute the tick format.
+      var format = tickFormat || x1.tickFormat(8);
+
+      // Update box ticks.
+      var boxTick = g.selectAll("text.box")
+          .data(quartileData);
+
+      boxTick.enter().append("text")
+          .attr("class", "box")
+          .attr("dy", ".3em")
+          .attr("dx", function(d, i) { return i & 1 ? 6 : -6 })
+          .attr("x", function(d, i) { return i & 1 ? width : 0 })
+          .attr("y", x0)
+          .attr("text-anchor", function(d, i) { return i & 1 ? "start" : "end"; })
+          .text(format)
+        .transition()
+          .duration(duration)
+          .attr("y", x1);
+
+      boxTick.transition()
+          .duration(duration)
+          .text(format)
+          .attr("y", x1);
+
+      // Update whisker ticks. These are handled separately from the box
+      // ticks because they may or may not exist, and we want don't want
+      // to join box ticks pre-transition with whisker ticks post-.
+      var whiskerTick = g.selectAll("text.whisker")
+          .data(whiskerData || []);
+
+      whiskerTick.enter().append("text")
+          .attr("class", "whisker")
+          .attr("dy", ".3em")
+          .attr("dx", 6)
+          .attr("x", width)
+          .attr("y", x0)
+          .text(format)
+          .style("opacity", 1e-6)
+        .transition()
+          .duration(duration)
+          .attr("y", x1)
+          .style("opacity", 1);
+
+      whiskerTick.transition()
+          .duration(duration)
+          .text(format)
+          .attr("y", x1)
+          .style("opacity", 1);
+
+      whiskerTick.exit().transition()
+          .duration(duration)
+          .attr("y", x1)
+          .style("opacity", 1e-6)
+          .remove();
+    });
+    d3.timer.flush();
+  }
+
+  box.width = function(x) {
+    if (!arguments.length) return width;
+    width = x;
+    return box;
+  };
+
+  box.height = function(x) {
+    if (!arguments.length) return height;
+    height = x;
+    return box;
+  };
+
+  box.tickFormat = function(x) {
+    if (!arguments.length) return tickFormat;
+    tickFormat = x;
+    return box;
+  };
+
+  box.duration = function(x) {
+    if (!arguments.length) return duration;
+    duration = x;
+    return box;
+  };
+
+  box.domain = function(x) {
+    if (!arguments.length) return domain;
+    domain = x == null ? x : d3.functor(x);
+    return box;
+  };
+
+  box.value = function(x) {
+    if (!arguments.length) return value;
+    value = x;
+    return box;
+  };
+
+  box.whiskers = function(x) {
+    if (!arguments.length) return whiskers;
+    whiskers = x;
+    return box;
+  };
+
+  box.quartiles = function(x) {
+    if (!arguments.length) return quartiles;
+    quartiles = x;
+    return box;
+  };
+
+  return box;
+};
+
+function boxWhiskers(d) {
+  return [0, d.length - 1];
+}
+
+function boxQuartiles(d) {
+  return [
+    d3.quantile(d, .25),
+    d3.quantile(d, .5),
+    d3.quantile(d, .75)
+  ];
+}
+
+})();
+
+
+</script>
+
+</body>
+</html>

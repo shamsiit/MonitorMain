@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    body {
+      font: 10px sans-serif;
+    }
+    
+    .bar rect {
+      fill: thistle;
+      shape-rendering: crispEdges;
+    }
+    
+    .bar text {
+      fill: black;
+    }
+    
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: cornsilk;
+      shape-rendering: crispEdges;
+    }
+  </style>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="https://d3js.org/d3-scale.v1.min.js"></script>
+  <script src="https://d3js.org/d3-axis.v1.min.js"></script>
+</head>
+
+<body>
+<label>bin counts</label>
+<input type="number" name="bincount" id="binCount" value="20">
+  <script>
+    function httpGet(theUrl){
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", theUrl, false ); // false for synchronous request
+    xmlHttp.send( null );
+    return xmlHttp.responseText;
+    }
+
+    response = httpGet("http://38.127.68.166:55000/data");
+    //console.log(response);
+    
+    fullJsonObj = JSON.parse(response);
+    /*usage_list = fullJsonObj.usage_user;
+    console.log('usage'+ usage_list);*/
+    var keys = Object.keys(fullJsonObj);
+    console.log('keys'+keys);
+
+    var desiredKey = keys[1];
+    console.log('desiredKey'+desiredKey);
+
+    draw_graph(desiredKey);
+
+    function change_graph_arg(){
+      var e = document.getElementById("subcategory");
+      var keyValue = e.options[e.selectedIndex].value;
+
+      console.log('change value '+keyValue);
+
+      draw_graph(keyValue)
+    }
+
+    function draw_graph(desiredKey){
+
+    d3.select("svg").remove();
+
+    var margin = {
+        top: 30,
+        right: 30,
+        bottom: 30,
+        left: 30
+      },
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+
+      values = fullJsonObj[desiredKey];
+
+    var bincount = document.getElementById("binCount").value;
+    console.log('bins'+bincount);
+
+      // Formatters for counts and times (converting numbers to Dates).
+    var formatCount = d3.format(",.0f"),
+      formatTime = d3.time.format("%H:%M"),
+      formatMinutes = function(d) {
+        return formatTime(new Date(2012, 0, 1, 0, d));
+      };
+    //this is the positioning of the chart
+    
+
+    var x = d3.scale.linear()
+      .domain([d3.min(values), d3.max(values)])
+      .range([0, width]);
+
+    // These are the number of bins in the histogram.
+    /*var ticks = d3.range(0, x.domain()[1] + 1, 30);*/
+    
+    bin_deviation = (d3.max(values)-d3.min(values))/bincount;
+    bin_deviation = bin_deviation.toFixed(6);
+    console.log(bin_deviation);
+    //bin_deviation = 0.1;
+
+    var data = d3.layout.histogram()
+      .bins(d3.range(x.domain()[0],x.domain()[1], bin_deviation))
+      (values);
+
+    var y = d3.scale.linear()
+      .domain([0, d3.max(data, function(d) {
+        console.log(d.y);
+        return d.y;
+      })])
+      .range([height, 0]);
+
+/*    var xAxis = d3.svg.axis()
+      .scale(x)
+      .orient("bottom")
+      .tickValues(ticks)
+      .tickFormat(formatMinutes);*/
+
+    
+
+    var xUpper = d3.svg.axis()
+                .tickValues(d3.range(x.domain()[0],x.domain()[1], bin_deviation))
+                .tickFormat(d3.format(",.2f"))
+                .orient("bottom")
+                .scale(d3.scale.linear().domain([x.domain()[0],d3.max(values)]).range([0,width]));
+
+
+
+    svg = d3.select("body").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    
+
+    var bar = svg.selectAll(".bar")
+      .data(data)
+      .enter().append("g")
+      .attr("class", "bar")
+      .attr("transform", function(d) {
+        return "translate(" + x(d.x) + "," + y(d.y) + ")";
+      });
+
+    bar.append("rect")
+      .attr("x", 1)
+      .attr("width", (x.range()[1] - x.range()[0]) / data.length - 2)
+      .attr("height", function(d) {
+        return height - y(d.y);
+      });
+    //this block of code makes the tick values showing how many fall into the bin
+
+    
+    bar.append("text")
+      .attr("dy", ".75em")
+      .attr("y", -12)
+      .attr("x", ((x.range()[1] - x.range()[0]) / data.length)/2)
+      .attr("text-anchor", "middle")
+      .text(function(d) {
+        return formatCount(d.y);
+      });
+
+    svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xUpper);
+    }
+    
+  </script>
+
+  <div class="sub_category_div" id="sub_category_div">Please select measurements:
+        <script type="text/javascript" language="JavaScript">
+            document.write('<select name="subcategory" id="subcategory" onchange="change_graph_arg()"><option value="">Please select measurements</option></select>')
+        </script>
+        <noscript>
+            <select name="subcategory" id="subcategory" >
+            <option value="">Please select measurements</option>
+            </select>
+        </noscript>
+        </div>
+<script>
+      for (i=0, len = keys.length ; i<len;i++){
+        document.getElementById("subcategory").options[i]=new Option(keys[i],keys[i]);
+      }
+</script>
+</script>
+</body>
+
+</html>

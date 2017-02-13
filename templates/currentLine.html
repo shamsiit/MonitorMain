@@ -1,0 +1,141 @@
+<html>
+    <head>
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+<style>
+path {
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+ 
+line {
+    stroke: black;
+}
+ 
+text {
+    font-family: Arial;
+    font-size: 7pt;
+}
+</style>
+
+    </head>
+
+    <body>
+	<script type="text/javascript">
+
+function httpGet(theUrl){
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", theUrl, false );
+    xmlHttp.send( null );
+    return xmlHttp.responseText;
+    }
+
+    response = httpGet("http://38.127.68.166:55000/data");
+
+    fullJsonObj = JSON.parse(response);
+    var keys = Object.keys(fullJsonObj);
+    var desiredKey = keys[1];
+    draw_graph(desiredKey);
+
+    function change_graph_arg(){
+      var e = document.getElementById("subcategory");
+      var keyValue = e.options[e.selectedIndex].value;
+
+      draw_graph(keyValue)
+    }
+
+    function draw_graph(desiredKey){
+	d3.select("svg").remove();
+	var indexes = fullJsonObj["index"]; 
+	var values = fullJsonObj[desiredKey];
+
+	times = []
+	for(var i = 0, size = indexes.length; i < size ; i++){
+	var item = indexes[i];
+   	var date = new Date(Date.parse(item));
+   	var time = parseFloat(date.getMinutes() + '.' + date.getSeconds());
+   	console.log(time);
+   	times.push(time);
+	}
+
+			w = 700,
+			h = 300,
+			margin = 30,
+			y = d3.scale.linear().domain([d3.min(values), d3.max(values)]).range([0 + margin, h - margin]),
+			x = d3.scale.linear().domain([times[0], times[times.length -1]]).range([0 + margin, w - margin])
+
+			var vis = d3.select("body")
+			    .append("svg:svg")
+			    .attr("width", w)
+			    .attr("height", h)
+
+			var g = vis.append("svg:g")
+			    .attr("transform", "translate(0, 300)");
+			
+			var line = d3.svg.line()
+			    .x(function(d,i) { return x(i); })
+			    .y(function(d) { return -1 * y(d); })
+			
+			g.append("svg:path").attr("d", line(values));
+			
+			
+			g.selectAll(".xLabel")
+			    .data(x.ticks(10))
+			    .enter().append("svg:text")
+			    .attr("class", "xLabel")
+			    .text(String)
+			    .attr("x", function(d) { return x(d) })
+			    .attr("y", 0)
+			    .attr("text-anchor", "middle")
+
+			g.selectAll(".yLabel")
+			    .data(y.ticks(5))
+			    .enter().append("svg:text")
+			    .attr("class", "yLabel")
+			    .text(String)
+			    .attr("x", 0)
+			    .attr("y", function(d) { return -1 * y(d) })
+			    .attr("text-anchor", "right")
+			    .attr("dy", -2)
+
+			g.append("g")
+			    .append("text")
+			    .text("(minutes)")
+			    .attr("x", w - margin - 10)
+			    .attr("y", 0)
+
+			g.append("g")
+			    .append("text")
+			    .text("(values)")
+			    .attr("x", 0)
+			    .attr("y", -(h - margin))
+		}	
+	</script>
+        <br></br>
+	<div class="sub_category_div" id="sub_category_div">Please select measurements:
+        <script type="text/javascript" language="JavaScript">
+            document.write('<select name="subcategory" id="subcategory" onchange="change_graph_arg()"><option value="">Please select measurements</option></select>')
+        </script>
+        <noscript>
+            <select name="subcategory" id="subcategory" >
+            <option value="">Please select measurements</option>
+            </select>
+        </noscript>
+        </div>
+<script>
+      for (i=0, len = keys.length; i<len;i++){
+        document.getElementById("subcategory").options[i]=new Option(keys[i],keys[i]);
+      }
+</script>
+
+    </body>
+
+</html>
+
+
+
+
+
+		
+		
+		

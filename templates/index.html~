@@ -1,0 +1,146 @@
+<!DOCTYPE html >
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<!-- Le styles -->
+<link rel="stylesheet" type="text/css"
+	href="{{url_for('static', filename='css/bootstrap.min.css')}}"/>
+<link rel="stylesheet" type="text/css"
+	href="{{url_for('static', filename='css/bootstrap-toggle.min.css')}}" />
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+	<script src="{{url_for('static', filename='js/jquery.min.js')}}"
+		type="text/javascript">
+		
+	</script>
+	<!-- Include all compiled plugins (below), or include individual files as needed -->
+	<script src="{{url_for('static', filename='js/bootstrap.min.js')}}"
+		type="text/javascript"></script>
+	<script src="{{url_for('static', filename='js/bootstrap-toggle.min.js')}}"
+		type="text/javascript"></script>
+
+
+
+</head>
+
+<body onload="">
+	<br />
+	<br />
+	<br />
+	<br />
+	<div class="" align="center">
+
+
+		<table class="table col-md-12" align="center">
+
+			<tr>
+
+				<td class="col-md-8">
+				<a type="button" class="btn btn-success ss"
+					data-toggle="modal"
+					data-target="#insertModal"> 
+					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> 
+					Add
+				</a>
+			   
+			  </td>
+
+			</tr>
+			
+
+		</table>
+	</div>
+
+
+
+	<div class="col-md-12"></div>
+	<br />
+	<br />
+
+	<div class="col-md-12"></div>
+
+	<div class="" align="center">
+
+		<div class="col-md-12 table-responsive">
+
+			<table class="table table-bordered table-hover col-md-12"
+				align="center">
+				<thead>
+					<tr class="success">
+						<th data-field="id">ID</th>
+						<th data-field="id">STATUS</th>
+						<th data-field="name">Name</th>
+						<th data-field="name">Source</th>
+						<th data-field="fromIp">Sending Server</th>
+						<!--  <th data-field="fromPort">RUDP Port<span class="col-md-12"></span><span
+							class="col-md-12"></span></th>-->
+						<th data-field="toIp">Receiving Server</th>
+						<th data-field="toPort">Delivery Server</th>
+						<th data-field="toPort">Delivery Port</th>
+						<th data-field="action">Action</th>
+					</tr>
+				</thead>
+
+				<tr>
+					<td></td>
+					<td ></td>
+					<td ></td>
+					<td ></td>
+					<td ></td>
+					<td ></td>
+					<td ></td>
+					<td ></td>
+					<td></td>
+				</tr>
+
+
+			</table>
+
+		</div>
+
+	</div>
+	
+
+
+	<div class="modal fade" id="insertModal" tabindex="-1" role="dialog"
+		aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="myModalLabel">Edit Form</h4>
+				</div>
+				<div class="modal-body">
+
+
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="submit" class="btn btn-primary">Save</button>
+
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	
+
+
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

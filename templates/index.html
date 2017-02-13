@@ -1,0 +1,374 @@
+<!DOCTYPE html >
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<!-- Le styles -->
+<link rel="stylesheet" type="text/css"
+	href="{{url_for('static', filename='css/bootstrap.min.css')}}"/>
+<link rel="stylesheet" type="text/css"
+	href="{{url_for('static', filename='css/bootstrap-toggle.min.css')}}" />
+	<link rel="stylesheet" type="text/css"
+	href="{{url_for('static', filename='css/jquery.datetimepicker.min.css')}}" />
+
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+	<script src="{{url_for('static', filename='js/jquery.js')}}"
+		type="text/javascript"></script>
+		<script src="{{url_for('static', filename='js/moment-with-locales.min.js')}}"
+		type="text/javascript"></script>
+		
+	</script>
+	<script src="{{url_for('static', filename='js/bootstrap.js')}}"
+		type="text/javascript"></script>
+	<!-- Include all compiled plugins (below), or include individual files as needed -->
+	
+	<script src="{{url_for('static', filename='js/bootstrap-toggle.min.js')}}"
+		type="text/javascript"></script>
+	<script src="{{url_for('static', filename='js/jquery.datetimepicker.full.js')}}"
+		type="text/javascript"></script>
+	<script type="text/javascript">
+    function request_subsystem(){
+    	var url = "http://localhost:5000/api/v1/subsystem";
+        $.get( url, function( data ) {
+    		var list = data["data"];
+                var select = document.getElementById('subsystem');
+                for (var i = 0; i<list.length; i++){
+    	            var opt = document.createElement('option');
+    	            opt.value = list[i].sub_system_id;
+    	            opt.innerHTML = list[i].sub_system_name;
+    	            select.appendChild(opt);
+                }
+    	});
+    }
+    function request_host(){
+    	
+        var url="http://localhost:5000/api/v1/host";
+
+    	$.get( url, function( data ) {
+    		var list = data["results"];
+                var select = document.getElementById('host');
+                for (var i = 0; i<list.length; i++){
+    	            var opt = document.createElement('option');
+    	            opt.value = list[i].host_id;
+    	            opt.innerHTML = list[i].host_name;
+    	            select.appendChild(opt);
+                }
+    	});
+    }
+
+    function list_all_report(){
+    	console.log("OK...");
+    	$(document).ready(function() {
+             $("#table").find("tr:gt(0)").remove();
+        });
+
+        var url = "http://localhost:5000/api/v1/report";
+
+        $.get( url, function( data ) {
+    		var list = data["results"];
+                var select = document.getElementById('table');
+                for (var i = 0; i<list.length; i++){
+    	            $('#table').append('<tr><td>'+list[i].report_id+'</td><td>'+list[i].time+'</td><td><button onclick="viewTable(this.value)" type="button" id="table_view" class="btn btn-success ss" value="/api/v1/report/'+list[i].report_id+'">View Report</button></td></tr>');
+                }
+    	});
+    }
+
+
+
+    function viewTable(url){
+
+    console.log(url);
+    		
+    $.ajax({
+    	url : url,
+    	type: "GET",
+    	async: true,
+    	success : function(data){
+
+    		/*$('#insertModal').find('.modal-body').html(data);
+            $('#insertModal').modal('show');*/
+            $(document).ready(function() {
+             $("#table-modal").find("tr").remove();
+             $("#details").remove();
+             $("#th").append('<tr id="th-tr" class="success"></tr>');
+             $("#table-modal").append('<tr id="ext-tr0"></tr>');
+            });
+            var list = data["results"];
+            var obj = list[0].report_json;
+            var keys = Object.keys(obj);
+            for(var i=0;i<keys.length;i++){
+            	$('#th-tr').append('<th data-field="'+keys[i]+'">'+keys[i]+'</th>');
+            }
+
+            var len = obj[keys[0]].length;
+
+
+            for(var i=0;i<len;i++){
+            	$("#table-modal").append('<tr id="ext-tr'+i+'"></tr>');
+            	var id = "#ext-tr"+i;
+            	for(var j=0;j<keys.length;j++){
+            		$(id).append('<td>'+obj[keys[j]][i]+'</td>');
+            	}
+            	
+            }
+
+            var start = url.lastIndexOf("/")+1;
+            var end = url.length;
+            var report_id = url.substring(start,end);
+            console.log("report id : "+report_id);
+            $("#modal-body").append('<a id="details" type="button" class="btn btn-success ss" href="/show_report/'+report_id+'">Details</a>');
+
+            $('#tableModal').modal('show');
+
+        },
+        error : function(){
+        	$(this).html("Error!");
+        }
+    });
+
+    }
+
+
+    $(document).ready(function(){
+    	$("#submit").click(function(){
+    		console.log("clicked..");
+
+    		var data = {};
+    		var Form = $("form");
+
+    		var url = Form.attr("action");
+
+    //Gathering the Data
+    //and removing undefined keys(buttons)
+    $.each(Form.serializeArray(), function(i, field) {
+        data[field.name] = field.value;
+    });
+
+    //Save Form Data........
+    $.ajax({
+    	cache: false,
+    	url : url,
+    	type: "POST",
+    	contentType: "application/json",
+    	dataType : "json",
+    	data : JSON.stringify(data),
+    	success : function(callback){
+            //Where $(this) => context == FORM
+            console.log(callback);
+            list_all_report();
+        },
+        error : function(){
+        	$(this).html("Error!");
+        }
+    });
+});
+
+    });
+
+    $(document).ready(function(){
+    	var d = new Date();
+    	var stamp = d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()+" "+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds();
+    	$("#time").val(stamp);
+    	console.log(stamp);
+    });
+    
+
+
+	</script>	
+
+
+</head>
+
+<body onload="request_subsystem(),request_host(),list_all_report()">
+	<br />
+	<br />
+	<br />
+	<br />
+	<div class="" align="center">
+
+
+		<table class="table col-md-12" align="center">
+
+			<tr>
+
+				<td class="col-md-8">
+				<a type="button" class="btn btn-success ss"
+					data-toggle="modal"
+					data-target="#insertModal"> 
+					<span class="glyphicon glyphicon-plus" aria-hidden="true"></span> 
+					Add
+				</a>
+			   
+			  </td>
+
+			</tr>
+			
+
+		</table>
+	</div>
+
+
+
+	<div class="col-md-12"></div>
+	<br />
+	<br />
+
+	<div class="col-md-12"></div>
+
+	<div class="" align="center">
+
+		<div class="col-md-12 table-responsive">
+
+			<table id="table" class="table table-bordered table-hover col-md-12"
+				align="center">
+				<thead>
+					<tr class="success">
+						<th data-field="id">ID</th>
+						<th data-field="id">Time</th>
+						<th data-field="action">Action</th>
+					</tr>
+				</thead>
+
+				<tr>
+					<td></td>
+					<td ></td>
+					<td ></td>
+					<td></td>
+				</tr>
+
+
+			</table>
+
+		</div>
+
+	</div>
+
+	<div class="modal fade" id="insertModal" tabindex="-1" role="dialog"
+		aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="myModalLabel">New Report Form</h4>
+				</div>
+				<div class="modal-body">
+
+				<br/><br/>
+				<form class="form" id="form" method="post" action="/api/v1/report">
+							
+									<div class="form-group">
+										<label >Host</label>
+											 <select class="form-control"  id="host" name="host_id">
+					
+				                            </select>
+									</div>
+						
+					
+									<div class="form-group">
+										<label >Sub System</label>
+											<select class="form-control" id="subsystem" name="sub_system_id">
+					
+				                            </select>
+									</div>
+					
+							
+									<div class="form-group">
+										<label >From</label>
+											<input id="datetimepicker" name="fromDate" type="text" value="" />
+									</div>
+								<script type="text/javascript">
+									jQuery(function(){
+										jQuery('#datetimepicker').datetimepicker();
+
+									});
+								</script>
+					
+									<div class="form-group">
+										    <label >To</label>
+											<input id="datetimepicker2" name="toDate" type="text" value="" />
+									</div>
+								<script type="text/javascript">
+									jQuery(function(){
+										jQuery('#datetimepicker2').datetimepicker();
+
+									});
+								</script>
+								<input id="time" name="time" type="hidden" value="" />
+					</form>				
+					
+
+				<br/><br/>
+
+
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<button type="submit" id="submit" class="btn btn-primary">Save</button>
+
+					</div>
+				
+				</div>
+			</div>
+		</div>
+	</div>
+    
+    <div class="modal fade" id="tableModal" tabindex="-1" role="dialog"
+		aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+					<h4 class="modal-title" id="myModalLabel">Table</h4>
+				</div>
+				<div class="modal-body" id="modal-body">
+
+				<br/><br/>
+
+				<table id="table-modal" class="table table-bordered table-hover"
+				align="center">
+				<thead id="th">
+					<tr id="th-tr" class="success">
+					</tr>
+				</thead>
+
+				<tr>
+					<td>sss</td>
+					<td >ss</td>
+					<td >ss</td>
+					<td>ss</td>
+				</tr>
+
+
+			</table>
+							
+					
+
+				<br/><br/>
+
+				
+				</div>
+			</div>
+		</div>
+	</div>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
